@@ -39,11 +39,14 @@ gradlePlugin {
     plugins {
         aop {
             id = 'asm2aop'
-            implementationClass = 'guru.ioio.asm2aop.Asm2aopPlugin'
+            implementationClass = 'guru.ioio.asm2aop.Asm2AopPlugin'
         }
     }
 }
 
+/**
+ *  call publishMavenPublicationToMavenLocal
+ */
 publishing {
     publications {
         maven(MavenPublication) {

@@ -9,7 +9,7 @@ import org.gradle.api.Plugin
 /**
  * A simple 'hello world' plugin.
  */
-class Asm2aopPlugin: Plugin<Project> {
+class Asm2AopPlugin: Plugin<Project> {
     override fun apply(project: Project) {
         // Register a task
         project.tasks.register("greeting") { task ->
