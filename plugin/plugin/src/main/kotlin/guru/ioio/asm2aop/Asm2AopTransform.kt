@@ -5,7 +5,14 @@ import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.ide.common.internal.WaitableExecutor
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.IOUtils
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.*
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
 
 class Asm2AopTransform(
     private val config: TransformConfig,
@@ -90,7 +97,10 @@ class Asm2AopTransform(
     }
 
     private fun transformJar(context: Context, input: JarInput, output: File) {
-//        println("transformJar")
+        config.disableJar && return
+        modifyJar(input.file, context.temporaryDir)?.let {
+            FileUtils.moveFile(it, output)
+        } ?: let { FileUtils.copyFile(input.file, output) }
     }
 
     private fun forEachDirectory(
@@ -99,11 +109,11 @@ class Asm2AopTransform(
         output: TransformOutputProvider,
         isIncremental: Boolean
     ) {
-        val src = input.file
-        val dst = output.getContentLocation(input.name, input.contentTypes, input.scopes, Format.DIRECTORY)
-        FileUtils.forceMkdir(dst)
-        val srcPath = src.absolutePath
-        val dstPath = dst.absolutePath
+        val srcDir = input.file
+        val dstDir = output.getContentLocation(input.name, input.contentTypes, input.scopes, Format.DIRECTORY)
+        FileUtils.forceMkdir(dstDir)
+        val srcPath = srcDir.absolutePath
+        val dstPath = dstDir.absolutePath
 
         println("forEachDirectory: $srcPath $dstPath")
         if (isIncremental) {
@@ -112,7 +122,7 @@ class Asm2AopTransform(
                 val dst = File(src.absolutePath.replace(srcPath, dstPath))
                 when (status) {
                     Status.ADDED, Status.CHANGED -> {
-
+                        forEachClass(context, srcDir, src, srcPath, dstPath, true)
                     }
                     Status.REMOVED -> {
                         if (dst.exists()) {
@@ -122,9 +132,9 @@ class Asm2AopTransform(
                 }
             }
         } else {
-            FileUtils.copyDirectory(src, dst)
-            src.walk().filter { it.name.endsWith(".class") }.forEach { classFile ->
-                forEachClass(context, src, classFile, srcPath, dstPath)
+            FileUtils.copyDirectory(srcDir, dstDir) // not only class files
+            srcDir.walk().filter { it.name.endsWith(".class") }.forEach { classFile ->
+                forEachClass(context, srcDir, classFile, srcPath, dstPath)
             }
         }
     }
@@ -134,10 +144,90 @@ class Asm2AopTransform(
         srcDir: File,
         srcFile: File,
         srcDirPath: String,
-        dstDirPath: String
+        dstDirPath: String,
+        copyOnFailed: Boolean = false,
     ) {
-        println("forEachClass ${srcFile.absolutePath}")
+        val targetFile = File(srcFile.absolutePath.replace(srcDirPath, dstDirPath)).apply {
+            exists() && delete()
+        }
+
+        modifyClass(srcDir, srcFile, context.temporaryDir)?.let {
+            FileUtils.moveFile(it, targetFile)
+        } ?: let {
+            if (copyOnFailed) {
+                FileUtils.copyFile(srcFile, targetFile)
+            }
+        }
+
     }
 
-//    private fun modifyClass()
+    private fun modifyClass(dir: File, classFile: File, tempDir: File): File? {
+        val className = classFile.absolutePath.replace(dir.absolutePath + File.separator, "")
+            .replace(File.separator, ".").replace(".class", "")
+        return if (config.shouldModify?.invoke(className) == false) {
+            null
+        } else {
+            //read
+            val inputStream = FileInputStream(classFile)
+            val srcByteArray = IOUtils.toByteArray(inputStream)
+            IOUtils.closeQuietly(inputStream)
+            // modify
+            modifyClass(srcByteArray)?.let { dstByteArray ->
+                // write
+                File(tempDir, UUID.randomUUID().toString() + ".class").apply {
+                    exists() && delete()
+                    createNewFile()
+                    IOUtils.closeQuietly(FileOutputStream(this).apply { write(dstByteArray) })
+                }
+            }
+        }
+    }
+
+    private fun modifyJar(srcJar: File, tempDir: File): File? {
+        srcJar.length() == 0L && return null
+        val file = JarFile(srcJar, false)
+        val dstJar = File(tempDir, DigestUtils.md5Hex(srcJar.absolutePath).substring(0, 8) + srcJar.name)
+        val jos = JarOutputStream(FileOutputStream(dstJar))
+        val entry = file.entries()
+        while (entry.hasMoreElements()) {
+            val jarEntry = entry.nextElement() as JarEntry
+            val entryName = jarEntry.name
+            if (entryName.endsWith(".DSA") || entryName.endsWith(".SF")) continue // ignore signature file
+
+            // read src
+            val srcByteArray = try {
+                IOUtils.toByteArray(file.getInputStream(jarEntry))
+            } catch (t: Throwable) {
+                t.printStackTrace()
+                return null
+            }
+
+            // modify
+            val dstByteArray = if (!jarEntry.isDirectory && entryName.endsWith(".class")) {
+                val className = entryName.replace("/", ".").replace(".class", "")
+                if (config.shouldModify?.invoke(className) == false) {
+                    srcByteArray
+                } else {
+                    modifyClass(srcByteArray) ?: srcByteArray
+                }
+            } else {
+                srcByteArray
+            }
+
+            // write dst
+            val dstEntry = JarEntry(entryName)
+            jos.putNextEntry(dstEntry)
+            jos.write(dstByteArray)
+            jos.closeEntry()
+        }
+        jos.close()
+        file.close()
+
+        return dstJar
+    }
+
+    private fun modifyClass(srcClass: ByteArray): ByteArray? {
+        return srcClass
+    }
+
 }

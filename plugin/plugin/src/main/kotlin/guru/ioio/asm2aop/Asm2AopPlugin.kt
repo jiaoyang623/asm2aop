@@ -23,7 +23,8 @@ class Asm2AopPlugin : Plugin<Project> {
         }
         val config = TransformConfig(
             isProjectLibrary = extension is LibraryExtension,
-            enableMultiThread = true
+            enableMultiThread = true,
+            shouldModify = { true },
         )
         extension?.registerTransform(Asm2AopTransform(config))
     }
