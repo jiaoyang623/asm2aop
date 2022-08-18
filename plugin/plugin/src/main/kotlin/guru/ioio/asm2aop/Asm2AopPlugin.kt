@@ -3,19 +3,28 @@
  */
 package guru.ioio.asm2aop
 
-import org.gradle.api.Project
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.LibraryExtension
 import org.gradle.api.Plugin
+import org.gradle.api.Project
 
 /**
  * A simple 'hello world' plugin.
  */
-class Asm2AopPlugin: Plugin<Project> {
+class Asm2AopPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        // Register a task
-        project.tasks.register("greeting") { task ->
-            task.doLast {
-                println("Hello from plugin 'guru.ioio.asm2aop.greeting'")
-            }
+        println("Asm2AopPlugin.apply()")
+        val extension = if (project.plugins.hasPlugin("com.android.application")) {
+            project.extensions.findByType(AppExtension::class.java)
+        } else if (project.plugins.hasPlugin("com.android.library")) {
+            project.extensions.findByType(LibraryExtension::class.java)
+        } else {
+            null
         }
+        val config = TransformConfig(
+            isProjectLibrary = extension is LibraryExtension,
+            enableMultiThread = true
+        )
+        extension?.registerTransform(Asm2AopTransform(config))
     }
 }
