@@ -3,9 +3,12 @@ package guru.ioio.asm2aop
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.ide.common.internal.WaitableExecutor
+import guru.ioio.asm2aop.asm.MainClassVisitor
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -30,7 +33,6 @@ class Asm2AopTransform(
     override fun isIncremental() = true
 
     override fun transform(transformInvocation: TransformInvocation?) {
-        println("AsmAop.transform($transformInvocation)")
         transformInvocation?.let { invocation ->
             transformClass(
                 invocation.context,
@@ -77,7 +79,6 @@ class Asm2AopTransform(
         val destName = input.file.name.substringAfterLast(".jar") + '_' +
                 DigestUtils.md5Hex(input.file.absolutePath).substring(0, 8)
         val destFile = output.getContentLocation(destName, input.contentTypes, input.scopes, Format.JAR)
-//        println("forEachJar $isIncremental ${input.status} ${input.file.absolutePath} -> $destFile")
         if (isIncremental) {
             when (input.status) {
                 Status.ADDED, Status.CHANGED -> {
@@ -115,10 +116,8 @@ class Asm2AopTransform(
         val srcPath = srcDir.absolutePath
         val dstPath = dstDir.absolutePath
 
-        println("forEachDirectory: $srcPath $dstPath")
         if (isIncremental) {
             input.changedFiles.forEach { (src, status) ->
-                println("class: $status ${src.absolutePath}")
                 val dst = File(src.absolutePath.replace(srcPath, dstPath))
                 when (status) {
                     Status.ADDED, Status.CHANGED -> {
@@ -172,7 +171,7 @@ class Asm2AopTransform(
             val srcByteArray = IOUtils.toByteArray(inputStream)
             IOUtils.closeQuietly(inputStream)
             // modify
-            modifyClass(srcByteArray)?.let { dstByteArray ->
+            modifyClass(className, srcByteArray)?.let { dstByteArray ->
                 // write
                 File(tempDir, UUID.randomUUID().toString() + ".class").apply {
                     exists() && delete()
@@ -208,7 +207,7 @@ class Asm2AopTransform(
                 if (config.shouldModify?.invoke(className) == false) {
                     srcByteArray
                 } else {
-                    modifyClass(srcByteArray) ?: srcByteArray
+                    modifyClass(className, srcByteArray) ?: srcByteArray
                 }
             } else {
                 srcByteArray
@@ -226,8 +225,17 @@ class Asm2AopTransform(
         return dstJar
     }
 
-    private fun modifyClass(srcClass: ByteArray): ByteArray? {
-        return srcClass
+    private fun modifyClass(className: String, srcClass: ByteArray): ByteArray? {
+        return try {
+            val classWriter = ClassWriter(ClassWriter.COMPUTE_MAXS)
+            val classVisitor = MainClassVisitor(classWriter)
+            var classReader = ClassReader(srcClass)
+            classReader.accept(classVisitor, ClassReader.EXPAND_FRAMES)
+            classWriter.toByteArray()
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            srcClass
+        }
     }
 
 }

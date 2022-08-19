@@ -9,3 +9,4 @@
 
 rootProject.name = 'asm2aop'
 include('plugin')
+include('aoptools')
