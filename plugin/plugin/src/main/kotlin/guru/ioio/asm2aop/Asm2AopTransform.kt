@@ -4,6 +4,7 @@ import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.ide.common.internal.WaitableExecutor
 import guru.ioio.asm2aop.asm.MainClassVisitor
+import guru.ioio.asm2aop.reader.TargetReader
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
@@ -53,6 +54,9 @@ class Asm2AopTransform(
         if (!isIncremental) {
             outputProvider.deleteAll()
         }
+        // read target list
+        val targetList = TargetReader().read(inputs)
+        println(targetList)
         //
         inputs.forEach { input ->
             input.jarInputs.forEach { jarInput ->
