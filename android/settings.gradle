@@ -9,3 +9,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Asm2AopDemo"
 include ':app'
+include ':lib'
+include ':asm2aop-annotation'
+include ':asm2aop-processor'
