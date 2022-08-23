@@ -9,4 +9,9 @@ public class AspectDemo {
     public void beforeOnCreate() {
         System.out.println("asm2aop: Activity.onCreated");
     }
+
+    @Before("execution android.app.Activity.onDestroy(..)")
+    public void beforeOnDestroy() {
+        System.out.println("asm2aop: Activity.onDestroy");
+    }
 }

@@ -1,10 +1,9 @@
 package guru.ioio.asm2aop.demo
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import guru.ioio.asm2aop.demo.databinding.ActivityMainBinding
 import java.io.Serializable
 
@@ -19,6 +18,7 @@ class MainActivity : AppCompatActivity() {
         mBinding.content.setOnClickListener {
             Toast.makeText(this, "iwantofindlambda", Toast.LENGTH_SHORT).show()
         }
+//        AopTarget.f0()
     }
 }
 
