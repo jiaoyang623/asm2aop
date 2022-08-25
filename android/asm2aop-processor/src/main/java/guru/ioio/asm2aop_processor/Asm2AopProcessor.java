@@ -8,6 +8,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +25,8 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 
+import guru.ioio.asm2aop_annotation.After;
+import guru.ioio.asm2aop_annotation.Around;
 import guru.ioio.asm2aop_annotation.Before;
 
 @AutoService(Processor.class)
@@ -48,6 +51,8 @@ public class Asm2AopProcessor extends AbstractProcessor {
         HashSet<String> hashSet = new HashSet<>();
 //        hashSet.add(Asm2Aop.class.getCanonicalName());
         hashSet.add(Before.class.getCanonicalName());
+        hashSet.add(After.class.getCanonicalName());
+        hashSet.add(Around.class.getCanonicalName());
 
         return hashSet;
     }
@@ -61,19 +66,9 @@ public class Asm2AopProcessor extends AbstractProcessor {
         if (mIsDone) return true;
         System.out.println(set);
         List<MetaBean> metaList = new ArrayList<>();
-        Set<? extends Element> elements = roundEnvironment.getElementsAnnotatedWith(Before.class);
-        String target = TARGET_PACKAGE + "." + TARGET_CLASS;
-        for (Element e : elements) {
-            // 找到对应的类，方法，注解
-            ExecutableElement element = (ExecutableElement) e;
-            TypeElement classElement = (TypeElement) element.getEnclosingElement();
-            String value = element.getAnnotation(Before.class).value();
-            String className = classElement.getQualifiedName().toString();
-            String methodName = element.getSimpleName().toString();
-            if (!className.equals(target)) {
-                metaList.add(new MetaBean(className, methodName, value));
-            }
-        }
+        makeMetaBean(roundEnvironment, metaList, Before.class);
+        makeMetaBean(roundEnvironment, metaList, After.class);
+        makeMetaBean(roundEnvironment, metaList, Around.class);
         try {
             generateFile(metaList);
         } catch (IOException e) {
@@ -81,6 +76,36 @@ public class Asm2AopProcessor extends AbstractProcessor {
         }
         mIsDone = true;
         return true;
+    }
+
+    private String getValue(Annotation annotation) {
+        if (annotation instanceof Before) {
+            return ((Before) annotation).value();
+        } else if (annotation instanceof After) {
+            return ((After) annotation).value();
+        } else if (annotation instanceof Around) {
+            return ((Around) annotation).value();
+        } else {
+            return null;
+        }
+    }
+
+    private <T extends Annotation> void makeMetaBean(
+            RoundEnvironment roundEnvironment,
+            List<MetaBean> metaList, Class<T> annotationClass) {
+        Set<? extends Element> elements = roundEnvironment.getElementsAnnotatedWith(annotationClass);
+        String target = TARGET_PACKAGE + "." + TARGET_CLASS;
+        for (Element e : elements) {
+            // 找到对应的类，方法，注解
+            ExecutableElement element = (ExecutableElement) e;
+            TypeElement classElement = (TypeElement) element.getEnclosingElement();
+            String value = getValue(element.getAnnotation(annotationClass));
+            String className = classElement.getQualifiedName().toString();
+            String methodName = element.getSimpleName().toString();
+            if (!className.equals(target) && value != null) {
+                metaList.add(new MetaBean(className, methodName, value, annotationClass));
+            }
+        }
     }
 
     private static final String METHOD_PREFIX = "f";
@@ -104,7 +129,7 @@ public class Asm2AopProcessor extends AbstractProcessor {
                     .addStatement(bean.className + " target=(" + bean.className + ")cache.get(" + bean.className + ".class)")
                     .addStatement("target." + bean.methodName + "()")
 //                    .addStatement("$T.out.println($S)", System.class, "Hello, JavaPoet!")
-                    .addAnnotation(AnnotationSpec.builder(Before.class)
+                    .addAnnotation(AnnotationSpec.builder(bean.annotation)
                             .addMember("value", "$S", bean.query)
                             .build())
                     .build();

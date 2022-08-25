@@ -1,13 +1,12 @@
 package guru.ioio.asm2aop.demo
 
+import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import guru.ioio.asm2aop.demo.databinding.ActivityMainBinding
 import java.io.Serializable
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
     private val mBinding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(LayoutInflater.from(this))
     }
@@ -15,11 +14,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(mBinding.root)
-        mBinding.content.setOnClickListener {
-            Toast.makeText(this, "iwantofindlambda", Toast.LENGTH_SHORT).show()
+        if (savedInstanceState == null) {
+            return
         }
-//        AopTarget.f0()
     }
+
+
 }
 
 open class BaseBean : Serializable {

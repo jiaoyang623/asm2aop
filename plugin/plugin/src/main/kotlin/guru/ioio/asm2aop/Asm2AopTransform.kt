@@ -4,6 +4,7 @@ import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.ide.common.internal.WaitableExecutor
 import guru.ioio.asm2aop.asm.MainClassVisitor
+import guru.ioio.asm2aop.reader.TargetBean
 import guru.ioio.asm2aop.reader.TargetReader
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
@@ -22,6 +23,7 @@ class Asm2AopTransform(
     private val config: TransformConfig,
 ) : Transform() {
     private val awaitableExecutor = if (config.enableMultiThread) WaitableExecutor.useGlobalSharedThreadPool() else null
+    private var mTargetList = emptyList<TargetBean>()
 
     override fun getName() = "Asm2AopTransform"
 
@@ -55,8 +57,8 @@ class Asm2AopTransform(
             outputProvider.deleteAll()
         }
         // read target list
-        val targetList = TargetReader().read(inputs)
-        println(targetList)
+        mTargetList = TargetReader().read(inputs)
+        println(mTargetList)
         //
         inputs.forEach { input ->
             input.jarInputs.forEach { jarInput ->
@@ -232,7 +234,7 @@ class Asm2AopTransform(
     private fun modifyClass(className: String, srcClass: ByteArray): ByteArray? {
         return try {
             val classWriter = ClassWriter(ClassWriter.COMPUTE_MAXS)
-            val classVisitor = MainClassVisitor(classWriter)
+            val classVisitor = MainClassVisitor(classWriter, mTargetList)
             var classReader = ClassReader(srcClass)
             classReader.accept(classVisitor, ClassReader.EXPAND_FRAMES)
             classWriter.toByteArray()
