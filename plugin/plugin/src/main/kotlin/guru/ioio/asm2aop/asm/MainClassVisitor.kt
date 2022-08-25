@@ -10,7 +10,7 @@ class MainClassVisitor(
     private val targetList: List<TargetBean>
 ) :
     ClassVisitor(Opcodes.ASM7, classVisitor) {
-    private var mTargetBean: TargetBean? = null
+    private var mClassTargetList: List<TargetBean>? = null
     override fun visit(
         version: Int,
         access: Int,
@@ -25,10 +25,9 @@ class MainClassVisitor(
         }
         val className = name.replace("/", ".")
         val superClassName = superName.replace("/", ".")
-        val targets = targetList.filter { it.injectClass == className || it.injectClass == superClassName }
-        mTargetBean = targets.firstOrNull()
+        mClassTargetList = targetList.filter { it.injectClass == className || it.injectClass == superClassName }
         if (className == "guru.ioio.asm2aop.demo.MainActivity") {
-            println("visit $name, $superName, [${interfaces?.joinToString(",")}], $targets")
+            println("visit $name, $superName, [${interfaces?.joinToString(",")}], $mClassTargetList")
         }
         super.visit(version, access, name, signature, superName, interfaces)
     }
@@ -40,11 +39,12 @@ class MainClassVisitor(
         signature: String?,
         exceptions: Array<out String>?
     ): MethodVisitor {
-        println("MCV: $mTargetBean, $name")
-        return if (name != null && mTargetBean?.injectMethod == name) {
+        val methodTargetList = mClassTargetList?.filter { it.injectMethod == name }
+        return if (name != null && !methodTargetList.isNullOrEmpty()) {// execution
+            println("MCV: $methodTargetList, $name")
             val methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions)
             MethodAdapter(Opcodes.ASM5, methodVisitor, access, name, descriptor).apply {
-                target = mTargetBean
+                targetList = methodTargetList
             }
         } else {
             super.visitMethod(access, name, descriptor, signature, exceptions)

@@ -9,26 +9,25 @@ import org.objectweb.asm.commons.AdviceAdapter
 class MethodAdapter(api: Int, methodVisitor: MethodVisitor?, access: Int, name: String?, descriptor: String?) :
     AdviceAdapter(api, methodVisitor, access, name, descriptor) {
     private val mTargetClassName = "guru/ioio/asm2aop/AopTarget"
-    var target: TargetBean? = null
+    var targetList: List<TargetBean>? = null
     override fun onMethodEnter() {
-        if (target?.executeType != Asm2AopConst.EXECUTE_TYPE_BEFORE) {
-            return
-        }
-        val method = target?.executeMethod
+        val target = targetList?.firstOrNull { it.executeType == Asm2AopConst.EXECUTE_TYPE_BEFORE }
+        target ?: return
+        val method = target.executeMethod
         println("MA: before $method")
-        if (!method.isNullOrEmpty()) {
+        if (method.isNotEmpty()) {
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, mTargetClassName, method, "()V", false)
         }
     }
 
     override fun onMethodExit(opcode: Int) {
-        if (target?.executeType != Asm2AopConst.EXECUTE_TYPE_AFTER) {
-            return
-        }
-        val method = target?.executeMethod
+        val target = targetList?.firstOrNull { it.executeType == Asm2AopConst.EXECUTE_TYPE_AFTER }
+        target ?: return
+        val method = target.executeMethod
         println("MA: after $method")
-        if (!method.isNullOrEmpty()) {
+        if (method.isNotEmpty()) {
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, mTargetClassName, method, "()V", false)
         }
     }
+
 }
