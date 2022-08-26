@@ -6,7 +6,7 @@ import guru.ioio.asm2aop_annotation.Before;
 
 @Asm2Aop
 public class AspectDemo {
-    @Before("execution void android.app.Activity.onCreate(..)")
+    @Before("execution void android.app.Activity.onCreate(android.os.Bundle)")
     public void beforeOnCreate() {
         System.out.println("asm2aop: before Activity.onCreated");
     }

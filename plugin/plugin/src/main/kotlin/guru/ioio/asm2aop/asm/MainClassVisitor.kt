@@ -1,5 +1,6 @@
 package guru.ioio.asm2aop.asm
 
+import guru.ioio.asm2aop.asm.AsmUtils.Companion.checkMethodDescription
 import guru.ioio.asm2aop.reader.TargetBean
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
@@ -39,9 +40,12 @@ class MainClassVisitor(
         signature: String?,
         exceptions: Array<out String>?
     ): MethodVisitor {
-        val methodTargetList = mClassTargetList?.filter { it.injectMethod == name }
+        println("MCV: $name, $descriptor")
+        val methodTargetList =
+            mClassTargetList?.filter {
+                it.injectMethod == name && checkMethodDescription(it.resultType, it.params, descriptor)
+            }
         return if (name != null && !methodTargetList.isNullOrEmpty()) {// execution
-            println("MCV: $methodTargetList, $name")
             val methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions)
             MethodAdapter(Opcodes.ASM5, methodVisitor, access, name, descriptor).apply {
                 targetList = methodTargetList
@@ -50,4 +54,5 @@ class MainClassVisitor(
             super.visitMethod(access, name, descriptor, signature, exceptions)
         }
     }
+
 }
