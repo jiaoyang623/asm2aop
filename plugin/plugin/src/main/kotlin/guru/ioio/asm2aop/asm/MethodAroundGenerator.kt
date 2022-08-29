@@ -31,10 +31,10 @@ class MethodAroundGenerator(
             visitCode()
             // call method with descriptor
             visitVarInsn(ALOAD, 0)
-//            AsmUtils.loadMethodParams(this, descriptorBean)
+            AsmUtils.loadMethodParams(this, descriptorBean)
             visitMethodInsn(INVOKESPECIAL, className, newName, descriptor, false);
-//            AsmUtils.callMethodReturn(this, descriptorBean)
-            visitMaxs(1, 1);
+            AsmUtils.callMethodReturn(this, descriptorBean)
+            visitMaxs(1, 1)
             visitEnd();
         }
     }

@@ -15,10 +15,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(mBinding.root)
-        if (savedInstanceState == null) {
-            return
-        }
-        load(byteArrayOf(1), charArrayOf('q'), shortArrayOf(9))
+        load(0, '0', 0)
     }
 
     override fun onResume() {
@@ -26,7 +23,8 @@ class MainActivity : Activity() {
         Log.i("MA", "onResume")
     }
 
-    private fun load(a: ByteArray, b: CharArray, c: ShortArray): IntArray {
+
+    private fun load(a: Byte, b: Char, c: Short): IntArray {
         Log.i("MA", "load $a, $b, $c")
         return intArrayOf(9)
     }

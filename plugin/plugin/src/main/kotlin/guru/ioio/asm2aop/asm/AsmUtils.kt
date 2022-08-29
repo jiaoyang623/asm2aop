@@ -49,6 +49,7 @@ class AsmUtils {
         }
 
         fun loadMethodParams(mv: MethodVisitor, descriptor: DescriptorBean) {
+            println("AU: in: $descriptor")
             descriptor.paramList.forEachIndexed { index, param ->
 //                int ILOAD = 21; // visitVarInsn
 //                int LLOAD = 22; // -
@@ -76,11 +77,12 @@ class AsmUtils {
                     "[F" -> FALOAD
                     "[D" -> DALOAD
                     "[L" -> AALOAD
-                    "[B" -> BALOAD
-                    "[C" -> CALOAD
-                    "[S" -> SALOAD
+                    "[B" -> ALOAD//BALOAD
+                    "[C" -> ALOAD//CALOAD
+                    "[S" -> ALOAD//SALOAD
                     else -> null
                 }?.let { code ->
+                    println("AU: in $p $code $index")
                     mv.visitVarInsn(code, index + 1)
                 }
             }
