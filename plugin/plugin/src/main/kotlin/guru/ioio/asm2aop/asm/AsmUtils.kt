@@ -1,5 +1,8 @@
 package guru.ioio.asm2aop.asm
 
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes.*
+
 class AsmUtils {
     companion object {
         /**
@@ -43,6 +46,63 @@ class AsmUtils {
                 else -> "L${typePart.replace(".", "/")};"
             }
             return arrayResult + typeResult
+        }
+
+        fun loadMethodParams(mv: MethodVisitor, descriptor: DescriptorBean) {
+            descriptor.paramList.forEachIndexed { index, param ->
+//                int ILOAD = 21; // visitVarInsn
+//                int LLOAD = 22; // -
+//                int FLOAD = 23; // -
+//                int DLOAD = 24; // -
+//                int ALOAD = 25; // -
+
+//                int IALOAD = 46; // visitInsn
+//                int LALOAD = 47; // -
+//                int FALOAD = 48; // -
+//                int DALOAD = 49; // -
+//                int AALOAD = 50; // -
+//                int BALOAD = 51; // -
+//                int CALOAD = 52; // -
+//                int SALOAD = 53; // -
+                val p = if (param.startsWith("[")) param.substring(0, 2) else param.substring(0, 1)
+                when (p) {
+                    "Z", "C", "B", "S", "I" -> ILOAD
+                    "J" -> LLOAD
+                    "F" -> FLOAD
+                    "D" -> DLOAD
+                    "L" -> ALOAD
+                    "[I" -> IALOAD
+                    "[J" -> LALOAD
+                    "[F" -> FALOAD
+                    "[D" -> DALOAD
+                    "[L" -> AALOAD
+                    "[B" -> BALOAD
+                    "[C" -> CALOAD
+                    "[S" -> SALOAD
+                    else -> null
+                }?.let { code ->
+                    mv.visitVarInsn(code, index + 1)
+                }
+            }
+        }
+
+        //            int IRETURN = 172; // visitInsn
+//            int LRETURN = 173; // -
+//            int FRETURN = 174; // -
+//            int DRETURN = 175; // -
+//            int ARETURN = 176; // -
+//            int RETURN = 177; // -
+        fun callMethodReturn(mv: MethodVisitor, descriptor: DescriptorBean) {
+            when (descriptor.returnType.firstOrNull()) {
+                'I' -> IRETURN
+                'J' -> LRETURN
+                'F' -> FRETURN
+                'D' -> DRETURN
+                'V' -> RETURN
+                else -> ARETURN
+            }.let { code ->
+                mv.visitInsn(code)
+            }
         }
     }
 }

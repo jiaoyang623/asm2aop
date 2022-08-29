@@ -6,7 +6,7 @@ import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.commons.AdviceAdapter
 
-class MethodAdapter(api: Int, methodVisitor: MethodVisitor?, access: Int, name: String?, descriptor: String?) :
+class MethodEdgeAdapter(api: Int, methodVisitor: MethodVisitor?, access: Int, name: String?, descriptor: String?) :
     AdviceAdapter(api, methodVisitor, access, name, descriptor) {
     private val mTargetClassName = "guru/ioio/asm2aop/AopTarget"
     var targetList: List<TargetBean>? = null
