@@ -40,6 +40,6 @@ class MethodAroundGenerator(
     }
 
     private fun genNew(): MethodVisitor {
-        return cv.visitMethod(ACC_PRIVATE, newName, descriptor, signature, exceptions)
+        return cv.visitMethod(ACC_PUBLIC, newName, descriptor, signature, exceptions)
     }
 }
