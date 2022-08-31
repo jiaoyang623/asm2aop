@@ -24,16 +24,8 @@ class MainActivity : Activity() {
     }
 
 
-    private fun load(a: Byte, b: Char, c: Short): IntArray {
-        Log.i("MA", "load $a, $b, $c")
+    private fun load(vararg args:Any): IntArray {
+        Log.i("MA", "load $args")
         return intArrayOf(9)
     }
 }
-
-open class BaseBean : Serializable {
-    var id: String? = null
-}
-
-open class AlphaBean : BaseBean()
-
-open class BetaBean : AlphaBean()

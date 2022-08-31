@@ -17,10 +17,13 @@ class MethodAroundGenerator(
     private val exceptions: Array<out String>?
 ) {
     private val newName = "f_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8)
+    private val newAroundName = newName + "_a"
     private val descriptorBean = DescriptorBean(descriptor)
+    private val aroundDescriptor = "([Ljava/lang/Object;)${descriptorBean.returnType}"
 
     fun generate(): MethodVisitor {
         println("MAG: $newName")
+        genAround()
         changeOld()
         return genNew()
     }
@@ -31,15 +34,39 @@ class MethodAroundGenerator(
             visitCode()
             // call method with descriptor
             visitVarInsn(ALOAD, 0)
-            AsmUtils.loadMethodParams(this, descriptorBean)
-            visitMethodInsn(INVOKESPECIAL, className, newName, descriptor, false);
+            AsmUtils.args2Array(this, descriptorBean)
+            visitMethodInsn(INVOKESPECIAL, className, newAroundName, aroundDescriptor, false);
             AsmUtils.callMethodReturn(this, descriptorBean)
             visitMaxs(1, 1)
-            visitEnd();
+            visitEnd()
         }
     }
 
+    private fun genAround() {
+        cv.visitMethod(
+            ACC_PRIVATE,
+            newAroundName,
+            aroundDescriptor,
+            signature,
+            exceptions
+        ).apply {
+            visitCode()
+            visitVarInsn(ALOAD, 0) // for call
+            for (i in 0 until descriptorBean.paramList.size) {
+                visitVarInsn(ALOAD, 1) // array
+                visitIntInsn(BIPUSH, i) // index
+                visitInsn(AALOAD) // load item to stack
+                AsmUtils.castObject2Type(this, descriptorBean.paramList[i])
+            }
+            visitMethodInsn(INVOKESPECIAL, className, newName, descriptor, false);
+            AsmUtils.callMethodReturn(this, descriptorBean)
+            visitMaxs(1, 1)
+            visitEnd()
+        }
+    }
+
+
     private fun genNew(): MethodVisitor {
-        return cv.visitMethod(ACC_PUBLIC, newName, descriptor, signature, exceptions)
+        return cv.visitMethod(ACC_PRIVATE, newName, descriptor, signature, exceptions)
     }
 }
