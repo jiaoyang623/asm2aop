@@ -1,5 +1,6 @@
 package guru.ioio.asm2aop.asm
 
+import guru.ioio.asm2aop.creator.IClassCreator
 import guru.ioio.asm2aop.reader.TargetBean
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
@@ -14,7 +15,8 @@ class MethodAroundGenerator(
     private val name: String?,
     private val descriptor: String?,
     private val signature: String?,
-    private val exceptions: Array<out String>?
+    private val exceptions: Array<out String>?,
+    private val classCreator: IClassCreator
 ) {
     private val newName = "f_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8)
     private val newAroundName = newName + "_a"

@@ -4,6 +4,9 @@ import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.ide.common.internal.WaitableExecutor
 import guru.ioio.asm2aop.asm.MainClassVisitor
+import guru.ioio.asm2aop.creator.DirClassCreator
+import guru.ioio.asm2aop.creator.IClassCreator
+import guru.ioio.asm2aop.creator.JarClassCreator
 import guru.ioio.asm2aop.reader.TargetBean
 import guru.ioio.asm2aop.reader.TargetReader
 import org.apache.commons.codec.digest.DigestUtils
@@ -122,12 +125,14 @@ class Asm2AopTransform(
         val srcPath = srcDir.absolutePath
         val dstPath = dstDir.absolutePath
 
+        println("AAT: dirPath: $dstPath")
+        val creator = DirClassCreator(dstPath)
         if (isIncremental) {
             input.changedFiles.forEach { (src, status) ->
                 val dst = File(src.absolutePath.replace(srcPath, dstPath))
                 when (status) {
                     Status.ADDED, Status.CHANGED -> {
-                        forEachClass(context, srcDir, src, srcPath, dstPath, true)
+                        forEachClass(context, srcDir, src, srcPath, dstPath, creator, true)
                     }
                     Status.REMOVED -> {
                         if (dst.exists()) {
@@ -139,7 +144,7 @@ class Asm2AopTransform(
         } else {
             FileUtils.copyDirectory(srcDir, dstDir) // not only class files
             srcDir.walk().filter { it.name.endsWith(".class") }.forEach { classFile ->
-                forEachClass(context, srcDir, classFile, srcPath, dstPath)
+                forEachClass(context, srcDir, classFile, srcPath, dstPath, creator)
             }
         }
     }
@@ -150,13 +155,14 @@ class Asm2AopTransform(
         srcFile: File,
         srcDirPath: String,
         dstDirPath: String,
+        classCreator: IClassCreator,
         copyOnFailed: Boolean = false,
     ) {
         val targetFile = File(srcFile.absolutePath.replace(srcDirPath, dstDirPath)).apply {
             exists() && delete()
         }
 
-        modifyClass(srcDir, srcFile, context.temporaryDir)?.let {
+        modifyClass(srcDir, srcFile, context.temporaryDir, classCreator)?.let {
             FileUtils.moveFile(it, targetFile)
         } ?: let {
             if (copyOnFailed) {
@@ -166,7 +172,7 @@ class Asm2AopTransform(
 
     }
 
-    private fun modifyClass(dir: File, classFile: File, tempDir: File): File? {
+    private fun modifyClass(dir: File, classFile: File, tempDir: File, classCreator: IClassCreator): File? {
         val className = classFile.absolutePath.replace(dir.absolutePath + File.separator, "")
             .replace(File.separator, ".").replace(".class", "")
         return if (config.shouldModify?.invoke(className) == false) {
@@ -177,7 +183,7 @@ class Asm2AopTransform(
             val srcByteArray = IOUtils.toByteArray(inputStream)
             IOUtils.closeQuietly(inputStream)
             // modify
-            modifyClass(className, srcByteArray)?.let { dstByteArray ->
+            modifyClass(className, srcByteArray, classCreator)?.let { dstByteArray ->
                 // write
                 File(tempDir, UUID.randomUUID().toString() + ".class").apply {
                     exists() && delete()
@@ -194,11 +200,13 @@ class Asm2AopTransform(
         val dstJar = File(tempDir, DigestUtils.md5Hex(srcJar.absolutePath).substring(0, 8) + srcJar.name)
         val jos = JarOutputStream(FileOutputStream(dstJar))
         val entry = file.entries()
+        val creator = JarClassCreator(jos)
         while (entry.hasMoreElements()) {
             val jarEntry = entry.nextElement() as JarEntry
             val entryName = jarEntry.name
             if (entryName.endsWith(".DSA") || entryName.endsWith(".SF")) continue // ignore signature file
 
+//            println("AAT: jarEntry: ${jarEntry.name}")
             // read src
             val srcByteArray = try {
                 IOUtils.toByteArray(file.getInputStream(jarEntry))
@@ -213,7 +221,7 @@ class Asm2AopTransform(
                 if (config.shouldModify?.invoke(className) == false) {
                     srcByteArray
                 } else {
-                    modifyClass(className, srcByteArray) ?: srcByteArray
+                    modifyClass(className, srcByteArray, creator) ?: srcByteArray
                 }
             } else {
                 srcByteArray
@@ -231,10 +239,10 @@ class Asm2AopTransform(
         return dstJar
     }
 
-    private fun modifyClass(className: String, srcClass: ByteArray): ByteArray? {
+    private fun modifyClass(className: String, srcClass: ByteArray, classCreator: IClassCreator): ByteArray? {
         return try {
             val classWriter = ClassWriter(ClassWriter.COMPUTE_MAXS)
-            val classVisitor = MainClassVisitor(classWriter, mTargetList)
+            val classVisitor = MainClassVisitor(classWriter, mTargetList, classCreator)
             var classReader = ClassReader(srcClass)
             classReader.accept(classVisitor, ClassReader.EXPAND_FRAMES)
             classWriter.toByteArray()

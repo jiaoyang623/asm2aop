@@ -2,6 +2,7 @@ package guru.ioio.asm2aop.asm
 
 import guru.ioio.asm2aop.Asm2AopConst
 import guru.ioio.asm2aop.asm.AsmUtils.Companion.checkMethodDescription
+import guru.ioio.asm2aop.creator.IClassCreator
 import guru.ioio.asm2aop.reader.TargetBean
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
@@ -9,7 +10,8 @@ import org.objectweb.asm.Opcodes
 
 class MainClassVisitor(
     classVisitor: ClassVisitor?,
-    private val targetList: List<TargetBean>
+    private val targetList: List<TargetBean>,
+    private val classCreator: IClassCreator,
 ) :
     ClassVisitor(Opcodes.ASM7, classVisitor) {
     private var mClassTargetList: List<TargetBean>? = null
@@ -67,7 +69,8 @@ class MainClassVisitor(
                     name,
                     descriptor,
                     signature,
-                    exceptions
+                    exceptions,
+                    classCreator
                 ).generate()
             }
         } else {
