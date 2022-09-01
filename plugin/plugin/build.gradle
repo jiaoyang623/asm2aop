@@ -67,7 +67,7 @@ publishing {
     publications {
         maven(MavenPublication) {
             groupId = 'guru.ioio.asm2aop'
-            artifactId = 'asm2aop'
+            artifactId = 'plugin'
             version = '1.0.0'
 
             from components.java

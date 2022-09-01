@@ -1,9 +1,6 @@
 package guru.ioio.asm2aop.demo;
 
-import guru.ioio.asm2aop_annotation.After;
-import guru.ioio.asm2aop_annotation.Around;
-import guru.ioio.asm2aop_annotation.Asm2Aop;
-import guru.ioio.asm2aop_annotation.Before;
+import guru.ioio.asm2aop.aoptools.annotation.*;
 
 @Asm2Aop
 public class AspectDemo {

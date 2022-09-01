@@ -1,0 +1,39 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.31'
+    id 'java-library'
+    id 'maven-publish'
+}
+
+//java {
+//    sourceCompatibility = JavaVersion.VERSION_1_8
+//    targetCompatibility = JavaVersion.VERSION_1_8
+//}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    repositories {
+        mavenCentral()
+        google()
+        mavenLocal()
+    }
+    implementation 'com.google.auto.service:auto-service:1.0.1'
+    annotationProcessor 'com.google.auto.service:auto-service:1.0.1'
+    implementation 'com.squareup:javapoet:1.13.0'
+    implementation project(":tools")
+//    implementation 'guru.ioio.asm2aop:tools:1.0.0'
+}
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'guru.ioio.asm2aop'
+            artifactId = 'processor'
+            version = '1.0.0'
+
+            from components.java
+        }
+    }
+}
