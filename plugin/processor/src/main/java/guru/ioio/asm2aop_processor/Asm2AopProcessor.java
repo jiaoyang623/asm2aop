@@ -1,22 +1,11 @@
 package guru.ioio.asm2aop_processor;
 
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.*;
 import guru.ioio.asm2aop.aoptools.annotation.After;
 import guru.ioio.asm2aop.aoptools.annotation.Around;
 import guru.ioio.asm2aop.aoptools.annotation.Before;
-
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import guru.ioio.asm2aop.aoptools.annotation.JointPoint;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -27,6 +16,9 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.*;
 
 @AutoService(Processor.class)
 public class Asm2AopProcessor extends AbstractProcessor {
@@ -121,17 +113,31 @@ public class Asm2AopProcessor extends AbstractProcessor {
 
         int count = 0;
         for (MetaBean bean : list) {
-            MethodSpec method = MethodSpec.methodBuilder(METHOD_PREFIX + count++)
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                    .returns(void.class)
-                    .addStatement("if(cache.get(" + bean.className + ".class)==null)cache.put(" + bean.className + ".class,new " + bean.className + "())")
-                    .addStatement(bean.className + " target=(" + bean.className + ")cache.get(" + bean.className + ".class)")
-                    .addStatement("target." + bean.methodName + "()")
-//                    .addStatement("$T.out.println($S)", System.class, "Hello, JavaPoet!")
-                    .addAnnotation(AnnotationSpec.builder(bean.annotation)
-                            .addMember("value", "$S", bean.query)
-                            .build())
-                    .build();
+            MethodSpec method;//                    .addStatement("$T.out.println($S)", System.class, "Hello, JavaPoet!")
+            if (bean.annotation == Around.class) {
+                method = MethodSpec.methodBuilder(METHOD_PREFIX + count++)
+                        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                        .addParameter(JointPoint.class, "jointPoint")
+                        .returns(Object.class)
+                        .addStatement("if(cache.get(" + bean.className + ".class)==null)cache.put(" + bean.className + ".class,new " + bean.className + "())")
+                        .addStatement(bean.className + " target=(" + bean.className + ")cache.get(" + bean.className + ".class)")
+                        .addStatement("return target." + bean.methodName + "(jointPoint)")
+                        .addAnnotation(AnnotationSpec.builder(bean.annotation)
+                                .addMember("value", "$S", bean.query)
+                                .build())
+                        .build();
+            } else {
+                method = MethodSpec.methodBuilder(METHOD_PREFIX + count++)
+                        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                        .returns(void.class)
+                        .addStatement("if(cache.get(" + bean.className + ".class)==null)cache.put(" + bean.className + ".class,new " + bean.className + "())")
+                        .addStatement(bean.className + " target=(" + bean.className + ")cache.get(" + bean.className + ".class)")
+                        .addStatement("target." + bean.methodName + "()")
+                        .addAnnotation(AnnotationSpec.builder(bean.annotation)
+                                .addMember("value", "$S", bean.query)
+                                .build())
+                        .build();
+            }
             classBuilder.addMethod(method);
         }
 

@@ -10,5 +10,7 @@ class Asm2AopConst {
 
         const val TARGET_FILE = "guru/ioio/asm2aop/AopTarget.class"
         const val TARGET_CLASS = "guru.ioio.asm2aop.AopTarget"
+        const val TARGET_CLASS_ASM = "guru/ioio/asm2aop/AopTarget"
+        const val TARGET_AROUND_DESCRIPTOR = "(Lguru/ioio/asm2aop/aoptools/annotation/JointPoint;)Ljava/lang/Object;"
     }
 }

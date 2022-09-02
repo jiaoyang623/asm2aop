@@ -65,15 +65,8 @@ class AsmUtils {
                 "F" -> FLOAD
                 "D" -> DLOAD
                 "L" -> ALOAD
-                "[I" -> IALOAD
-                "[J" -> LALOAD
-                "[F" -> FALOAD
-                "[D" -> DALOAD
-                "[L" -> AALOAD
-                "[B" -> ALOAD//BALOAD
-                "[C" -> ALOAD//CALOAD
-                "[S" -> ALOAD//SALOAD
-                else -> null
+                "[I", "[J", "[F", "[D", "[L", "[B", "[C", "[S" -> ALOAD
+                else -> ALOAD
             }
         }
 
@@ -123,7 +116,7 @@ class AsmUtils {
 //        "long" -> "J"
 //        "float" -> "F"
 //        "double" -> "D"
-        private fun castType2Object(mv: MethodVisitor, desc: String) {
+        fun castType2Object(mv: MethodVisitor, desc: String) {
             println("AU: castType: $desc")
             when (desc) {
                 "Z" -> mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
@@ -143,39 +136,42 @@ class AsmUtils {
             }
         }
 
-        fun castObject2Type(methodVisitor: MethodVisitor, desc: String) {
+        fun castObject2Type(mv: MethodVisitor, desc: String) {
             when (desc) {
                 "Z" -> { // boolean
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean");
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
                 }
                 "C" -> { // char
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Character");
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Character")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
                 }
                 "B" -> { // byte
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Byte");
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Byte")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false)
                 }
                 "S" -> { // short
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Short");
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Short")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
                 }
                 "I" -> { // int
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Integer")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
                 }
                 "J" -> {// long
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Long");
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Long")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
                 }
                 "F" -> { // float
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Float");
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Float")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
                 }
                 "D" -> { // double
-                    methodVisitor.visitTypeInsn(CHECKCAST, "java/lang/Double");
-                    methodVisitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false);
+                    mv.visitTypeInsn(CHECKCAST, "java/lang/Double")
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+                }
+                else -> {
+                    mv.visitTypeInsn(CHECKCAST, desc)
                 }
             }
         }

@@ -40,10 +40,10 @@ public class AlphaBean extends BaseBean {
     }
 
     public void call(Object[] args) {
-        exe((boolean) args[0], (short) args[1], (long) args[2], (float) args[3], (double) args[4]);
+        exe((boolean) args[0], (short) args[1], (long) args[2], (float) args[3], (double) args[4], (int[]) args[5]);
     }
 
-    public void exe(boolean a, short b, long c, float d, double e) {
+    public void exe(boolean a, short b, long c, float d, double e, int[] f) {
 
     }
 }

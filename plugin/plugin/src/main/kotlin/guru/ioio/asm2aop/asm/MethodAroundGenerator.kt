@@ -1,11 +1,13 @@
 package guru.ioio.asm2aop.asm
 
+import guru.ioio.asm2aop.Asm2AopConst
+import guru.ioio.asm2aop.MD5Utils
 import guru.ioio.asm2aop.creator.IClassCreator
 import guru.ioio.asm2aop.reader.TargetBean
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.*
-import java.util.*
+
 
 class MethodAroundGenerator(
     private val cv: ClassVisitor,
@@ -18,13 +20,19 @@ class MethodAroundGenerator(
     private val exceptions: Array<out String>?,
     private val classCreator: IClassCreator
 ) {
-    private val newName = "f_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8)
+
+    private val newName = "f_" + MD5Utils.md5(descriptor ?: "").substring(0, 8)
     private val newAroundName = newName + "_a"
     private val descriptorBean = DescriptorBean(descriptor)
     private val aroundDescriptor = "([Ljava/lang/Object;)${descriptorBean.returnType}"
+    private val jointPointClassName = "$className$$name$$newAroundName${'$'}jp"
 
     fun generate(): MethodVisitor {
         println("MAG: $newName")
+        classCreator.create(
+            jointPointClassName,
+            JointPointGenerator(jointPointClassName, className, newAroundName, descriptorBean).generate()
+        )
         genAround()
         changeOld()
         return genNew()
@@ -34,19 +42,57 @@ class MethodAroundGenerator(
         println("MAG: $className.$name() $descriptor -> $descriptorBean")
         cv.visitMethod(access, name, descriptor, signature, exceptions).apply {
             visitCode()
+            val localStart = 1 + descriptorBean.paramList.size
+            val paramsPos = localStart + 0
+            val jpPos = localStart + 1
             // call method with descriptor
-            visitVarInsn(ALOAD, 0)
             AsmUtils.args2Array(this, descriptorBean)
-            visitMethodInsn(INVOKESPECIAL, className, newAroundName, aroundDescriptor, false);
-            AsmUtils.callMethodReturn(this, descriptorBean)
+            visitVarInsn(ASTORE, paramsPos)
+            callInject(this, paramsPos, jpPos)
+            // call AopTarget.fxx()
+            visitVarInsn(ALOAD, jpPos)
+            visitMethodInsn(
+                INVOKESTATIC,
+                Asm2AopConst.TARGET_CLASS_ASM,
+                targetBean.executeMethod,
+                Asm2AopConst.TARGET_AROUND_DESCRIPTOR,
+                false
+            )
+            // call end
+            if (descriptorBean.returnType == "V") {
+                visitInsn(RETURN)
+            } else {
+                visitTypeInsn(CHECKCAST, descriptorBean.returnType)
+                AsmUtils.callMethodReturn(this, descriptorBean)
+            }
             visitMaxs(1, 1)
             visitEnd()
         }
     }
 
+    // stack [this, args]
+    private fun callInject(mv: MethodVisitor, paramsPos: Int, jpPos: Int) {
+        // call inject
+        val jpClass = jointPointClassName.replace(".", "/")
+        mv.apply {
+            // new joint point
+            visitTypeInsn(NEW, jpClass)
+            visitInsn(DUP)
+            visitMethodInsn(INVOKESPECIAL, jpClass, "<init>", "()V", false)
+            visitVarInsn(ASTORE, jpPos)
+            //
+            visitVarInsn(ALOAD, jpPos)
+            visitVarInsn(ALOAD, paramsPos)
+            visitFieldInsn(PUTFIELD, jpClass, "args", "[Ljava/lang/Object;")
+            visitVarInsn(ALOAD, jpPos)
+            visitVarInsn(ALOAD, 0)
+            visitFieldInsn(PUTFIELD, jpClass, "target", "Ljava/lang/Object;")
+        }
+    }
+
     private fun genAround() {
         cv.visitMethod(
-            ACC_PRIVATE,
+            ACC_PUBLIC,
             newAroundName,
             aroundDescriptor,
             signature,

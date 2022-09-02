@@ -8,7 +8,7 @@ import org.objectweb.asm.commons.AdviceAdapter
 
 class MethodEdgeAdapter(api: Int, methodVisitor: MethodVisitor?, access: Int, name: String?, descriptor: String?) :
     AdviceAdapter(api, methodVisitor, access, name, descriptor) {
-    private val mTargetClassName = "guru/ioio/asm2aop/AopTarget"
+    private val mTargetClassName = Asm2AopConst.TARGET_CLASS_ASM
     var targetList: List<TargetBean>? = null
     override fun onMethodEnter() {
         val target = targetList?.firstOrNull { it.executeType == Asm2AopConst.EXECUTE_TYPE_BEFORE }
