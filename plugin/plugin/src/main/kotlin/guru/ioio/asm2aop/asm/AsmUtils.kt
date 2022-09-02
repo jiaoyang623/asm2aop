@@ -89,6 +89,20 @@ class AsmUtils {
             }
         }
 
+        fun returnNull(mv: MethodVisitor, descriptor: DescriptorBean) {
+            when (descriptor.returnType.firstOrNull()) {
+                'I' -> Pair(ICONST_0, IRETURN)
+                'J' -> Pair(LCONST_0, LRETURN)
+                'F' -> Pair(FCONST_0, FRETURN)
+                'D' -> Pair(DCONST_0, DRETURN)
+                'V' -> Pair(null, RETURN)
+                else -> Pair(ACONST_NULL, ARETURN)
+            }.let { (value, code) ->
+                value?.let { mv.visitInsn(value) }
+                mv.visitInsn(code)
+            }
+        }
+
         fun args2Array(mv: MethodVisitor, descriptor: DescriptorBean) {
             mv.apply {
                 // make array

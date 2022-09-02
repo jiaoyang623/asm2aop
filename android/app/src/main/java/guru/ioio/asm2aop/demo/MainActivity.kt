@@ -9,12 +9,12 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        load(0, '0', intArrayOf(0))
+        println(load(0, '0', intArrayOf(0)))
     }
 
-    private fun load(a: Int, b: Char, c: IntArray): IntArray {
+    private fun load(a: Int, b: Char, c: IntArray): Int {
         Log.i("MA", "load $a, $b, $c")
-        return intArrayOf(9)
+        return 1
     }
 
 }

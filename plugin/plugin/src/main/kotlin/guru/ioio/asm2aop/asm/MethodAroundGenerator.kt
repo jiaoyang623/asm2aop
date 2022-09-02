@@ -5,6 +5,7 @@ import guru.ioio.asm2aop.MD5Utils
 import guru.ioio.asm2aop.creator.IClassCreator
 import guru.ioio.asm2aop.reader.TargetBean
 import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes.*
 
@@ -45,6 +46,7 @@ class MethodAroundGenerator(
             val localStart = 1 + descriptorBean.paramList.size
             val paramsPos = localStart + 0
             val jpPos = localStart + 1
+//            val outPos = localStart + 2
             // call method with descriptor
             AsmUtils.args2Array(this, descriptorBean)
             visitVarInsn(ASTORE, paramsPos)
@@ -58,12 +60,20 @@ class MethodAroundGenerator(
                 Asm2AopConst.TARGET_AROUND_DESCRIPTOR,
                 false
             )
+            visitInsn(DUP)
+//            visitVarInsn(ASTORE, outPos)
             // call end
             if (descriptorBean.returnType == "V") {
                 visitInsn(RETURN)
             } else {
-                visitTypeInsn(CHECKCAST, descriptorBean.returnType)
+                val nullLabel = Label()
+                visitJumpInsn(IFNULL, nullLabel)
+                // parse not null
+                AsmUtils.castObject2Type(this, descriptorBean.returnType)
                 AsmUtils.callMethodReturn(this, descriptorBean)
+                // parse null
+                visitLabel(nullLabel)
+                AsmUtils.returnNull(this, descriptorBean)
             }
             visitMaxs(1, 1)
             visitEnd()
