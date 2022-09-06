@@ -65,9 +65,9 @@ class ClassTraveller {
     }
 
     fun instanceOf(childName: String, parent: String): Boolean {
+        childName == parent && return true
         val bean = classMap[childName] ?: return false
         mutableListOf<String>().apply {
-            add(bean.name)
             add(bean.ext)
             addAll(bean.impl)
         }.forEach { p ->
