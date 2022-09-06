@@ -1,6 +1,7 @@
 package guru.ioio.asm2aop.asm
 
 import guru.ioio.asm2aop.Asm2AopConst
+import guru.ioio.asm2aop.ClassTraveller
 import guru.ioio.asm2aop.asm.AsmUtils.Companion.checkMethodDescription
 import guru.ioio.asm2aop.creator.IClassCreator
 import guru.ioio.asm2aop.reader.TargetBean
@@ -12,6 +13,7 @@ class MainClassVisitor(
     classVisitor: ClassVisitor?,
     private val targetList: List<TargetBean>,
     private val classCreator: IClassCreator,
+    private val classTraveller: ClassTraveller,
 ) :
     ClassVisitor(Opcodes.ASM7, classVisitor) {
     private var mClassTargetList: List<TargetBean>? = null
@@ -30,8 +32,7 @@ class MainClassVisitor(
         }
         mClass = name
         val className = name.replace("/", ".")
-        val superClassName = superName.replace("/", ".")
-        mClassTargetList = targetList.filter { it.injectClass == className || it.injectClass == superClassName }
+        mClassTargetList = targetList.filter { classTraveller.instanceOf(className, it.injectClass) }
         if (className == "guru.ioio.asm2aop.demo.MainActivity") {
             println("visit $name, $superName, [${interfaces?.joinToString(",")}], $mClassTargetList")
         }

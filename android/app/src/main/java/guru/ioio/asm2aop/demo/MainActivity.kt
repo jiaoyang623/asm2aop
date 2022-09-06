@@ -1,10 +1,10 @@
 package guru.ioio.asm2aop.demo
 
-import android.app.Activity
 import android.os.Bundle
 import android.util.Log
+import androidx.fragment.app.FragmentActivity
 
-class MainActivity : Activity() {
+class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

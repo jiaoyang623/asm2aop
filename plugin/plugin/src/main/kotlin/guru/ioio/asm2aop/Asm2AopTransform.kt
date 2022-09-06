@@ -14,7 +14,6 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.util.CheckClassAdapter
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -28,6 +27,7 @@ class Asm2AopTransform(
 ) : Transform() {
     private val awaitableExecutor = if (config.enableMultiThread) WaitableExecutor.useGlobalSharedThreadPool() else null
     private var mTargetList = emptyList<TargetBean>()
+    private val mTraveller = ClassTraveller()
 
     override fun getName() = "Asm2AopTransform"
 
@@ -60,6 +60,8 @@ class Asm2AopTransform(
         if (!isIncremental) {
             outputProvider.deleteAll()
         }
+        mTraveller.travel(inputs, isIncremental)
+
         // read target list
         mTargetList = TargetReader().read(inputs)
         println(mTargetList)
@@ -244,7 +246,7 @@ class Asm2AopTransform(
         return try {
             val classWriter = ClassWriter(ClassWriter.COMPUTE_MAXS)
 //            val checkClassAdapter = CheckClassAdapter(classWriter)
-            val classVisitor = MainClassVisitor(classWriter, mTargetList, classCreator)
+            val classVisitor = MainClassVisitor(classWriter, mTargetList, classCreator, mTraveller)
             var classReader = ClassReader(srcClass)
             classReader.accept(classVisitor, ClassReader.EXPAND_FRAMES)
             classWriter.toByteArray()
