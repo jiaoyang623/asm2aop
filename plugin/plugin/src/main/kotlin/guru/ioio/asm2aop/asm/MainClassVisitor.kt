@@ -17,6 +17,8 @@ class MainClassVisitor(
 ) :
     ClassVisitor(Opcodes.ASM7, classVisitor) {
     private var mClassTargetList: List<TargetBean>? = null
+    private val mTargetClassSet = targetList.map { it.injectClass.replace(".", "/") }.toHashSet()
+    private val mTargetMethodSet = targetList.map { it.injectMethod }.toHashSet()
     private var mClass: String? = null
     override fun visit(
         version: Int,
@@ -46,7 +48,6 @@ class MainClassVisitor(
         signature: String?,
         exceptions: Array<out String>?
     ): MethodVisitor {
-        println("MCV: $name, $descriptor")
         val className = mClass
         val methodTargetList =
             mClassTargetList?.filter {
@@ -76,6 +77,13 @@ class MainClassVisitor(
             }
         } else {
             super.visitMethod(access, name, descriptor, signature, exceptions)
+        }.let { mv ->
+            CallMethodVisitor(
+                mv,
+                targetList.filter { it.injectType == Asm2AopConst.INJECT_TYPE_CALL },
+                mTargetClassSet,
+                mTargetMethodSet
+            )
         }
     }
 

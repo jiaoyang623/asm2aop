@@ -37,4 +37,14 @@ public class AspectDemo {
 //        return jp.execute();
         return null;
     }
+
+    @Before("call * guru.ioio.asm2aop.demo.MainActivity.load(..)")
+    public void beforeCallOnCreate() {
+        System.out.println("asm2aop: before MainActivity.load call");
+    }
+
+    @After("call * guru.ioio.asm2aop.demo.MainActivity.load(..)")
+    public void afterCallOnCreate() {
+        System.out.println("asm2aop: after MainActivity.load call");
+    }
 }
