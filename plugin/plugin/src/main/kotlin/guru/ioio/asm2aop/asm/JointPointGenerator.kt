@@ -45,12 +45,18 @@ class JointPointGenerator(
             visitVarInsn(ALOAD, 0)
             visitFieldInsn(GETFIELD, name, "target", "Ljava/lang/Object;")
             visitTypeInsn(CHECKCAST, target)
-            visitVarInsn(ALOAD, 1)
+            // array to args
+            for (i in 0 until descriptorBean.paramList.size) {
+                visitVarInsn(ALOAD, 1) // array
+                visitIntInsn(BIPUSH, i) // index
+                visitInsn(AALOAD) // load item to stack
+                AsmUtils.castObject2Type(this, descriptorBean.paramList[i])
+            }
             visitMethodInsn(
                 INVOKEVIRTUAL,
                 target,
                 targetMethod,
-                "([Ljava/lang/Object;)${descriptorBean.returnType}",
+                descriptorBean.descriptor,
                 false
             )
             // check cast to object

@@ -1,6 +1,6 @@
 package guru.ioio.asm2aop.asm
 
-class DescriptorBean(descriptor: String?) {
+class DescriptorBean(val descriptor: String?) {
     val paramList = mutableListOf<String>()
     var returnType = "V"
         private set

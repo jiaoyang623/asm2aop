@@ -47,4 +47,10 @@ public class AspectDemo {
     public void afterCallOnCreate() {
         System.out.println("asm2aop: after MainActivity.load call");
     }
+    @Around("call * guru.ioio.asm2aop.demo.MainActivity.load(..)")
+    public Object aroundCallLoad(JointPoint jp) {
+        System.out.println("asm2aop: around MainActivity.load call: " + jp.target + ", " + Arrays.toString(jp.args));
+//        return jp.execute();
+        return null;
+    }
 }
