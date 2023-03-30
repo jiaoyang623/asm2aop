@@ -14,3 +14,5 @@
 .cxx
 local.properties
 /.idea/
+asm2aop-annotation/build
+asm2aop-processor/build
