@@ -82,7 +82,9 @@ class MainClassVisitor(
                 mv,
                 targetList.filter { it.injectType == Asm2AopConst.INJECT_TYPE_CALL },
                 mTargetClassSet,
-                mTargetMethodSet
+                mTargetMethodSet,
+                this@MainClassVisitor,
+                classCreator,
             )
         }
     }

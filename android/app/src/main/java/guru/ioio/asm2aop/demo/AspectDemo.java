@@ -33,7 +33,7 @@ public class AspectDemo {
 
     @Around("execution * guru.ioio.asm2aop.demo.MainActivity.load(..)")
     public Object aroundLoad(JointPoint jp) {
-        System.out.println("asm2aop: around MainActivity.load: " + jp.target + ", " + Arrays.toString(jp.args));
+        System.out.println("asm2aop: around MainActivity.load: " + jp.executor + ", " + Arrays.toString(jp.args));
 //        return jp.execute();
         return null;
     }
@@ -49,7 +49,7 @@ public class AspectDemo {
     }
     @Around("call * guru.ioio.asm2aop.demo.MainActivity.load(..)")
     public Object aroundCallLoad(JointPoint jp) {
-        System.out.println("asm2aop: around MainActivity.load call: " + jp.target + ", " + Arrays.toString(jp.args));
+        System.out.println("asm2aop: around MainActivity.load call: " + jp.executor + ", " + Arrays.toString(jp.args));
 //        return jp.execute();
         return null;
     }

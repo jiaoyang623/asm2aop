@@ -3,7 +3,7 @@ package guru.ioio.asm2aop.asm
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
 
-class JointPointGenerator(
+class ExecJointPointGenerator(
     private val className: String,
     private val targetClass: String,
     private val targetMethod: String,
@@ -43,7 +43,7 @@ class JointPointGenerator(
             visitCode()
             // call target
             visitVarInsn(ALOAD, 0)
-            visitFieldInsn(GETFIELD, name, "target", "Ljava/lang/Object;")
+            visitFieldInsn(GETFIELD, name, "executor", "Ljava/lang/Object;")
             visitTypeInsn(CHECKCAST, target)
             // array to args
             for (i in 0 until descriptorBean.paramList.size) {

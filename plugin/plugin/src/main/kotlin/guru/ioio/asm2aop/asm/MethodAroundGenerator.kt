@@ -22,7 +22,7 @@ class MethodAroundGenerator(
     private val classCreator: IClassCreator
 ) {
 
-    private val newName = "f_" + MD5Utils.md5(descriptor ?: "").substring(0, 8)
+    private val newName = "fe_" + MD5Utils.md5(descriptor ?: "").substring(0, 8)
     private val descriptorBean = DescriptorBean(descriptor)
     private val jointPointClassName = "$className$$name$$newName${'$'}jp"
 
@@ -30,7 +30,7 @@ class MethodAroundGenerator(
         println("MAG: $newName")
         classCreator.create(
             jointPointClassName,
-            JointPointGenerator(jointPointClassName, className, newName, descriptorBean).generate()
+            ExecJointPointGenerator(jointPointClassName, className, newName, descriptorBean).generate()
         )
         changeOld()
         return genNew()
@@ -92,7 +92,7 @@ class MethodAroundGenerator(
             visitFieldInsn(PUTFIELD, jpClass, "args", "[Ljava/lang/Object;")
             visitVarInsn(ALOAD, jpPos)
             visitVarInsn(ALOAD, 0)
-            visitFieldInsn(PUTFIELD, jpClass, "target", "Ljava/lang/Object;")
+            visitFieldInsn(PUTFIELD, jpClass, "executor", "Ljava/lang/Object;")
         }
     }
 
